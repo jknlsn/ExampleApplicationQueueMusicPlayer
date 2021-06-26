@@ -11,6 +11,31 @@ import MediaPlayer
 
 struct ContentView: View {
     
+    var body: some View {
+        TabView{
+            SongsView(10)
+                .tabItem {
+                    Image(systemName: "bolt")
+                    Text("100")
+                }
+            
+            SongsView(100)
+                .tabItem {
+                    Image(systemName: "hare")
+                    Text("100")
+                }
+            
+            SongsView(10000)
+                .tabItem {
+                    Image(systemName: "tortoise")
+                    Text("10000")
+                }
+        }
+    }
+}
+
+struct SongsView: View {
+    
     @State var musicLibraryAccess: Bool = false
     
     let musicPlayer = MPMusicPlayerApplicationController.applicationQueuePlayer
@@ -18,6 +43,12 @@ struct ContentView: View {
     let musicLibrary = MPMediaLibrary()
     
     @State var songs: [MPMediaItem] = [MPMediaItem]()
+    
+    let count: Int
+    
+    init(_ count: Int){
+        self.count = count
+    }
     
     var body: some View {
         NavigationView {
@@ -35,6 +66,7 @@ struct ContentView: View {
                     ForEach(songs, id: \.persistentID){
                         song in
                         Text(song.title ?? "No title")
+                            .foregroundColor(song.title == musicPlayer.nowPlayingItem?.title ? .orange : .primary)
                     }
                 }
             }
@@ -80,7 +112,7 @@ struct ContentView: View {
                 }
                 results = result
             }
-            await setSongs(results)
+            await setSongs(Array(results.prefix(count)))
         }
     }
     
