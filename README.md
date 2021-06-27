@@ -10,3 +10,7 @@ As far as I can tell trying to use background threads, new async functions etc d
 I also get errors like this seemingly while iterating over the queue items.
 
 `2021-06-27 08:06:33.948419+0800 ExampleApplicationQueueMusicPlayer[5718:1855331] [Entitlements] MSVEntitlementUtilities - Process ExampleApplicationQueueMusicPlayer PID[5718] - Group: com.apple.private.tcc.allow - Entitlement: kTCCServiceMediaLibrary - Entitled: NO - Error: (null)`
+
+I've also tried persisting the queue itself, but when referring to it later the items return nil.
+
+I am looking for a way to be able to retrieve the queue from the player after shuffling items, to avoid having to try and implement shuffle myself!
