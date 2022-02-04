@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+import MusicKit
 import MediaPlayer
 
 struct ContentView: View {
@@ -30,6 +31,18 @@ struct ContentView: View {
                     Image(systemName: "tortoise")
                     Text("10000")
                 }
+            
+            SongsView(100, useMusicKitPlayerQueue: true)
+                .tabItem {
+                    Image(systemName: "hare")
+                    Text("100 MK")
+                }
+            
+            SongsView(10000, useMusicKitPlayerQueue: true)
+                .tabItem {
+                    Image(systemName: "tortoise")
+                    Text("10000 MK")
+                }
         }
     }
 }
@@ -38,29 +51,38 @@ struct SongsView: View {
     
     @State var musicLibraryAccess: Bool = false
     
+    let musicKitMusicPlayer = ApplicationMusicPlayer.shared
+    
     let musicPlayer = MPMusicPlayerApplicationController.applicationQueuePlayer
     
     let musicLibrary = MPMediaLibrary()
+    
+    var useMusicKitPlayerQueue = false
     
     @State var songs: [MPMediaItem] = [MPMediaItem]()
     
     let count: Int
     
-    init(_ count: Int){
+    init(_ count: Int, useMusicKitPlayerQueue: Bool = false){
         self.count = count
+        self.useMusicKitPlayerQueue = useMusicKitPlayerQueue
     }
     
     var body: some View {
         NavigationView {
             VStack{
                 Button(action: {
-                    shuffleSongs()
+                    if useMusicKitPlayerQueue {
+                        shuffleSongsGetFromMusicKitMusicPlayer()
+                    }
+                    else {
+                        shuffleSongsGetFromQueueTransaction()
+                    }
                 }){
                     Text("Shuffle")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.large)
-                .controlProminence(.increased)
                 
                 List{
                     ForEach(songs, id: \.persistentID){
@@ -79,19 +101,27 @@ struct SongsView: View {
         }
     }
     
-    func shuffleSongs(){
+    func shuffleSongsGetFromQueueTransaction(){
         let queueDescriptor = MPMusicPlayerMediaItemQueueDescriptor(itemCollection: MPMediaItemCollection(items: songs))
         musicPlayer.setQueue(with: queueDescriptor)
+        
+        print(songs.map{$0.title})
+        
         musicPlayer.shuffleMode = .songs
         musicPlayer.play()
         
+        print(musicKitMusicPlayer.queue.entries.map{$0.title})
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: {
+            print(musicKitMusicPlayer.queue.entries.map{$0.title})
+        })
         
         musicPlayer.perform(queueTransaction: {
             playerqueue in
             print("in queue transaction")
         }, completionHandler: {
             playerqueue, error in
-            detach {
+            Task.detached {
                 print("in queue completed")
                 await setSongs(playerqueue.items)
                 print("songs set completed")
@@ -102,8 +132,25 @@ struct SongsView: View {
         })
     }
     
+    func shuffleSongsGetFromMusicKitMusicPlayer(){
+        let queueDescriptor = MPMusicPlayerMediaItemQueueDescriptor(itemCollection: MPMediaItemCollection(items: songs))
+        musicPlayer.setQueue(with: queueDescriptor)
+        
+        print(songs.map{$0.title})
+        
+        musicPlayer.shuffleMode = .songs
+        musicPlayer.play()
+        
+        print(musicKitMusicPlayer.queue.entries.map{$0.title})
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5, execute: {
+            print(musicKitMusicPlayer.queue.entries.map{$0.title})
+            // TODO: exercise for the reader is now reordering by ID to reflect shuffle!
+        })
+    }
+    
     func getSongsFromLibrary() {
-        detach {
+        Task.detached {
             var results: [MPMediaItem] = []
             if self.musicLibraryAccess {
                 let query = MPMediaQuery.songs()
